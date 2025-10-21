@@ -118,7 +118,7 @@
             padding: 15px;
             background: linear-gradient(135deg, #eff6ff, #dbeafe);
             border-radius: 12px;
-            border-left: 5px solid #3b82f6;
+            
         }
 
         /* Countdown styles */
@@ -409,8 +409,7 @@
             </div>
         </div>
 
-        <button id="submit-btn" style="display:none;">✅ Nộp bài</button>
-        <button id="hint-btn" style="display:none;">💡 Gợi ý (1 lần)</button>
+        <button id="submit-btn" style="display:none;">Xác nhận ✅</button>
 
         <div id="result" style="display:none;"></div> <!-- Bắt đầu ẩn, hiển thị khi có kết quả -->
     </div>
@@ -429,7 +428,7 @@
         let gameState = {
             correctOrder: [], playerOrder: [], aiOrder: [],
             aiDifficulty: "medium", round: 1, maxRounds: 1,
-            playerScore: 0, aiScore: 0, hintsUsed: 0, sequenceSpeed: 1500
+            playerScore: 0, aiScore: 0, sequenceSpeed: 1500
         };
 
         // ✅ ELEMENTS - HOÀN CHỈNH
@@ -439,7 +438,6 @@
             playerBoard: document.getElementById("player-board"),
             aiBoard: document.getElementById("ai-board"),
             submitBtn: document.getElementById("submit-btn"),
-            hintBtn: document.getElementById("hint-btn"),
             result: document.getElementById("result"),
             aiLoading: document.getElementById("ai-loading"),
             playerArea: document.getElementById("player-area"),
@@ -455,15 +453,11 @@
             elements.aiArea.style.display = "none";
             elements.playAreas.style.display = "none";
             elements.submitBtn.style.display = "none";
-            elements.hintBtn.style.display = "none";
             elements.status.style.display = "block";
             elements.imageSeq.style.display = "none";
             document.querySelectorAll('.highlight-correct, .highlight-wrong').forEach(el => {
                 el.classList.remove('highlight-correct', 'highlight-wrong');
             });
-            gameState.hintsUsed = 0;
-            elements.hintBtn.textContent = "💡 Gợi ý (1 lần)";
-            elements.hintBtn.disabled = false;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -533,7 +527,6 @@
             elements.playAreas.style.display = "flex";
             elements.status.textContent = `Sắp xếp đúng thứ tự!`;
             elements.submitBtn.style.display = "inline-block";
-            elements.hintBtn.style.display = "inline-block";
             elements.imageSeq.style.display = "none";
 
             const shuffled = shuffle([...IMAGES]);
@@ -600,17 +593,25 @@
         function calculateAIOrder() {
             let aiOrder = [...gameState.correctOrder];
             const difficulty = gameState.aiDifficulty;
+            let numSwaps = 0;
 
             if (difficulty === "easy") {
-                const idx = Math.floor(Math.random() * 5);
-                [aiOrder[idx], aiOrder[(idx + 1) % 5]] = [aiOrder[(idx + 1) % 5], aiOrder[idx]];
+                numSwaps = 2 + Math.floor(Math.random() * 2); // 2-3 swaps (AI sai nhiều hơn)
             } else if (difficulty === "medium") {
-                const i1 = Math.floor(Math.random() * 5);
-                const i2 = Math.floor(Math.random() * 5);
-                [aiOrder[i1], aiOrder[i2]] = [aiOrder[i2], aiOrder[i1]];
+                numSwaps = 1 + Math.floor(Math.random() * 2); // 1-2 swaps
             } else {
-                aiOrder = shuffle([...gameState.correctOrder]);
+                numSwaps = Math.floor(Math.random() * 2); // 0-1 swaps (AI sai ít hơn)
             }
+
+            for (let s = 0; s < numSwaps; s++) {
+                const i1 = Math.floor(Math.random() * 5);
+                let i2 = Math.floor(Math.random() * 5);
+                while (i2 === i1) {
+                    i2 = Math.floor(Math.random() * 5);
+                }
+                [aiOrder[i1], aiOrder[i2]] = [aiOrder[i2], aiOrder[i1]];
+            }
+
             return aiOrder;
         }
 
@@ -629,29 +630,12 @@
             return 2000;
         }
 
-        // ✅ HINT SYSTEM
-        elements.hintBtn.onclick = () => {
-            if (gameState.hintsUsed >= 1) return;
-            gameState.hintsUsed++;
-            elements.hintBtn.textContent = "💡 Đã dùng!";
-            elements.hintBtn.disabled = true;
-
-            const items = elements.playerBoard.children;
-            for (let i = 0; i < 2; i++) {
-                if (gameState.playerOrder[i] === gameState.correctOrder[i]) {
-                    items[i].classList.add("highlight-correct");
-                    setTimeout(() => items[i].classList.remove("highlight-correct"), 2000);
-                }
-            }
-        };
-
         // ✅ SUBMIT - SỬA LỖI LOOP VÁN
         elements.submitBtn.onclick = checkResults;
 
         function checkResults() {
             gameState.playerOrder = Array.from(elements.playerBoard.children).map(c => c.textContent);
             elements.submitBtn.style.display = "none";
-            elements.hintBtn.style.display = "none";
             elements.status.style.display = "none";
 
             let playerRoundScore = 0, aiRoundScore = 0;
