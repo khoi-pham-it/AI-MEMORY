@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Ghi Nhớ Hình Ảnh</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #CCFFAA 0%, #1E5B53 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        #game-area {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Bỏ header hiện tại, kết quả sẽ đưa lên top khi cần */
+
+        .board {
+            display: grid;
+            /* Mặc định cho ghi nhớ: ngang */
+            grid-template-columns: repeat(5, 1fr);
+            /* Buộc ngang 5 cột */
+            justify-content: center;
+            gap: 12px;
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 12px;
+            background: #f8fafc;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        #player-board.board,
+        #ai-board.board {
+            /* Cho player và AI: 3 trên, 2 dưới */
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        #image-sequence {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 12px;
+            background: #f8fafc;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .image-box {
+            width: 60px;
+            /* Scale nhỏ */
+            height: 60px;
+            border: 3px solid #d1d5db;
+            border-radius: 15px;
+            font-size: 30px;
+            /* Scale nhỏ font */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+            cursor: grab;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .image-box:active {
+            cursor: grabbing;
+        }
+
+        .image-box:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        #ai-board .image-box {
+            border: 3px solid #9ca3af;
+            background: #f1f5f9;
+            cursor: default;
+        }
+
+        #ai-board .image-box:hover {
+            transform: none;
+            scale: 1;
+        }
+
+        .label {
+            font-weight: 600;
+            margin: 20px 0 8px;
+            color: #1e293b;
+            font-size: 1.2em;
+        }
+
+        #status {
+            font-weight: 600;
+            color: #1e293b;
+            margin: 20px 0;
+            font-size: 1.1em;
+            padding: 15px;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border-radius: 12px;
+            border-left: 5px solid #3b82f6;
+        }
+
+        /* Countdown styles */
+        body.countdown::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+        }
+
+        body.countdown #status {
+            position: fixed !important;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(4em, 15vw, 10em);
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            z-index: 1001;
+            background: none !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            border-left: none !important;
+            margin: 0 !important;
+        }
+
+        button {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #difficulty-selection {
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .difficulty-btn {
+            background: transparent;
+            border: 3px solid;
+            color: inherit;
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .difficulty-btn[data-level="easy"] {
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .difficulty-btn[data-level="easy"]:hover {
+            background: #22c55e;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .difficulty-btn[data-level="medium"] {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .difficulty-btn[data-level="medium"]:hover {
+            background: #3b82f6;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .difficulty-btn[data-level="hard"] {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .difficulty-btn[data-level="hard"]:hover {
+            background: #ef4444;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        #result {
+            margin-top: 0;
+            /* Đưa lên top làm header */
+            padding: 20px;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: 15px 15px 0 0;
+            /* Làm header */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        #result h3 {
+            margin: 0 0 15px;
+            color: #92400e;
+            font-size: 1.5em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .highlight-correct {
+            border-color: #22c55e !important;
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important;
+            box-shadow: 0 0 20px #22c55e40 !important;
+            animation: correctPulse 0.6s ease;
+        }
+
+        .highlight-wrong {
+            border-color: #ef4444 !important;
+            background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
+            box-shadow: 0 0 20px #ef444440 !important;
+            animation: wrongShake 0.6s ease;
+        }
+
+        @keyframes correctPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes wrongShake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .image-box {
+                width: 50px;
+                height: 50px;
+                font-size: 25px;
+            }
+
+            .board {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            /* Adjust for mobile */
+            #image-sequence {
+                justify-content: flex-start;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Song song player và ai */
+        .play-areas {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .play-area {
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="game-area">
+        <!-- Bỏ header, result sẽ làm header khi cần -->
+
+        <div id="difficulty-selection">
+            <h2>🎮 Chọn độ khó AI (5 hình)</h2>
+            <button class="difficulty-btn" data-level="easy">🟢 DỄ</button>
+            <button class="difficulty-btn" data-level="medium">🔵 TRUNG BÌNH</button>
+            <button class="difficulty-btn" data-level="hard">🔴 KHÓ</button>
+        </div>
+
+        <div id="status">Đang khởi tạo trò chơi...</div>
+
+        <div id="image-sequence" style="display:none;"></div>
+
+        <div class="play-areas" style="display:none;" id="play-areas">
+            <div id="player-area" class="play-area" style="display:none;">
+                <div class="label">🧍‍♂️ Bạn sắp xếp:</div>
+                <div id="player-board" class="board"></div>
+            </div>
+
+            <div id="ai-area" class="play-area" style="display:none;">
+                <div class="label">🤖 AI sắp xếp: <span class="loading" id="ai-loading" style="display:none;"></span>
+                </div>
+                <div id="ai-board" class="board"></div>
+            </div>
+        </div>
+
+        <button id="submit-btn" style="display:none;">✅ Nộp bài</button>
+        <button id="hint-btn" style="display:none;">💡 Gợi ý (1 lần)</button>
+
+        <div id="result" style="display:none;"></div> <!-- Bắt đầu ẩn, hiển thị khi có kết quả -->
+    </div>
+
+    <div id="achievement-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="achievement-title">🎉 Thành tựu!</h2>
+            <p id="achievement-desc"></p>
+            <button onclick="closeModal()">Tiếp tục</button>
+        </div>
+    </div>
+
+    <script>
+        // ✅ CHỈ 5 HÌNH ẢNH
+        const IMAGES = ["🍎", "🍌", "🍇", "🍊", "🍉"];
+        let gameState = {
+            correctOrder: [], playerOrder: [], aiOrder: [],
+            aiDifficulty: "medium", round: 1, maxRounds: 1,
+            playerScore: 0, aiScore: 0, hintsUsed: 0, sequenceSpeed: 1500
+        };
+
+        // ✅ ELEMENTS - HOÀN CHỈNH
+        const elements = {
+            status: document.getElementById("status"),
+            imageSeq: document.getElementById("image-sequence"),
+            playerBoard: document.getElementById("player-board"),
+            aiBoard: document.getElementById("ai-board"),
+            submitBtn: document.getElementById("submit-btn"),
+            hintBtn: document.getElementById("hint-btn"),
+            result: document.getElementById("result"),
+            aiLoading: document.getElementById("ai-loading"),
+            playerArea: document.getElementById("player-area"),
+            aiArea: document.getElementById("ai-area"),
+            playAreas: document.getElementById("play-areas")
+        };
+
+        // ✅ RESET UI CHO VÁN MỚI
+        function resetForNewRound() {
+            elements.result.innerHTML = "";
+            elements.result.style.display = "none";
+            elements.playerArea.style.display = "none";
+            elements.aiArea.style.display = "none";
+            elements.playAreas.style.display = "none";
+            elements.submitBtn.style.display = "none";
+            elements.hintBtn.style.display = "none";
+            elements.status.style.display = "block";
+            elements.imageSeq.style.display = "none";
+            document.querySelectorAll('.highlight-correct, .highlight-wrong').forEach(el => {
+                el.classList.remove('highlight-correct', 'highlight-wrong');
+            });
+            gameState.hintsUsed = 0;
+            elements.hintBtn.textContent = "💡 Gợi ý (1 lần)";
+            elements.hintBtn.disabled = false;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            bindDifficultyButtons();
+        });
+
+        function bindDifficultyButtons() {
+            document.querySelectorAll(".difficulty-btn").forEach(btn => {
+                btn.onclick = () => {
+                    gameState.aiDifficulty = btn.dataset.level;
+                    gameState.sequenceSpeed = btn.dataset.level === "easy" ? 2000 :
+                        btn.dataset.level === "medium" ? 1500 : 1000;
+                    document.getElementById("difficulty-selection").style.display = "none";
+                    startRound();
+                };
+            });
+        }
+
+        // ✅ HÀM START ROUND - SỬA LỖI LOOP
+        function startRound() {
+            resetForNewRound();
+            elements.status.textContent = `Ghi nhớ 5 hình!`;
+            gameState.correctOrder = shuffle([...IMAGES]);
+            elements.imageSeq.style.display = "flex";
+            startCountdown(showSequence);
+        }
+
+        function startCountdown(callback) {
+            document.body.classList.add('countdown');
+            let count = 3;
+            elements.status.textContent = `${count}`;
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    elements.status.textContent = `${count}`;
+                } else {
+                    clearInterval(interval);
+                    elements.status.textContent = "GO!";
+                    setTimeout(() => {
+                        document.body.classList.remove('countdown');
+                        elements.status.textContent = `Ghi nhớ 5 hình!`;
+                        callback();
+                    }, 800);
+                }
+            }, 1000);
+        }
+
+        function showSequence() {
+            elements.imageSeq.innerHTML = "";
+            let i = 0;
+            const showNext = () => {
+                if (i >= 5) {
+                    setTimeout(startPlayerPhase, 1500);
+                    return;
+                }
+                const div = createImageBox(gameState.correctOrder[i]);
+                elements.imageSeq.appendChild(div);
+                i++;
+                setTimeout(showNext, gameState.sequenceSpeed);
+            };
+            showNext();
+        }
+
+        function startPlayerPhase() {
+            elements.playerArea.style.display = "block";
+            elements.aiArea.style.display = "block";
+            elements.playAreas.style.display = "flex";
+            elements.status.textContent = `Sắp xếp đúng thứ tự!`;
+            elements.submitBtn.style.display = "inline-block";
+            elements.hintBtn.style.display = "inline-block";
+            elements.imageSeq.style.display = "none";
+
+            const shuffled = shuffle([...IMAGES]);
+            setupPlayerBoard(shuffled);
+            simulateAdvancedAI();
+        }
+
+        function createImageBox(img) {
+            const div = document.createElement("div");
+            div.className = "image-box";
+            div.textContent = img;
+            return div;
+        }
+
+        function setupPlayerBoard(shuffled) {
+            elements.playerBoard.innerHTML = "";
+            gameState.playerOrder = shuffled.slice();
+            shuffled.forEach((img) => {
+                const div = createImageBox(img);
+                div.draggable = true;
+                div.addEventListener("dragstart", dragStart);
+                elements.playerBoard.appendChild(div);
+            });
+            makeDroppable();
+        }
+
+        // ✅ DRAG & DROP
+        let draggedItem = null;
+        function dragStart(e) {
+            draggedItem = this;
+            setTimeout(() => this.style.opacity = "0.5", 0);
+        }
+        function dragOver(e) { e.preventDefault(); }
+        function dropItem(e) {
+            e.preventDefault();
+            if (this === draggedItem) return;
+            const parent = this.parentNode;
+            const draggedIndex = Array.from(parent.children).indexOf(draggedItem);
+            const dropIndex = Array.from(parent.children).indexOf(this);
+            if (draggedIndex < dropIndex) {
+                parent.insertBefore(draggedItem, this.nextSibling);
+            } else {
+                parent.insertBefore(draggedItem, this);
+            }
+            draggedItem.style.opacity = "1";
+            gameState.playerOrder = Array.from(parent.children).map(c => c.textContent);
+        }
+        function makeDroppable() {
+            document.querySelectorAll("#player-board .image-box").forEach(item => {
+                item.addEventListener("dragover", dragOver);
+                item.addEventListener("drop", dropItem);
+            });
+        }
+
+        function simulateAdvancedAI() {
+            elements.aiLoading.style.display = "inline-block";
+            setTimeout(() => {
+                elements.aiLoading.style.display = "none";
+                gameState.aiOrder = calculateAIOrder();
+                displayAISequence();
+            }, getAIDelay());
+        }
+
+        function calculateAIOrder() {
+            let aiOrder = [...gameState.correctOrder];
+            const difficulty = gameState.aiDifficulty;
+
+            if (difficulty === "easy") {
+                const idx = Math.floor(Math.random() * 5);
+                [aiOrder[idx], aiOrder[(idx + 1) % 5]] = [aiOrder[(idx + 1) % 5], aiOrder[idx]];
+            } else if (difficulty === "medium") {
+                const i1 = Math.floor(Math.random() * 5);
+                const i2 = Math.floor(Math.random() * 5);
+                [aiOrder[i1], aiOrder[i2]] = [aiOrder[i2], aiOrder[i1]];
+            } else {
+                aiOrder = shuffle([...gameState.correctOrder]);
+            }
+            return aiOrder;
+        }
+
+        function displayAISequence() {
+            elements.aiBoard.innerHTML = "";
+            gameState.aiOrder.forEach(img => {
+                const div = createImageBox(img);
+                elements.aiBoard.appendChild(div);
+            });
+        }
+
+        // ✅ HÀM getAIDelay - SỬA LỖI
+        function getAIDelay() {
+            if (gameState.aiDifficulty === "easy") return 1000;
+            if (gameState.aiDifficulty === "medium") return 1500;
+            return 2000;
+        }
+
+        // ✅ HINT SYSTEM
+        elements.hintBtn.onclick = () => {
+            if (gameState.hintsUsed >= 1) return;
+            gameState.hintsUsed++;
+            elements.hintBtn.textContent = "💡 Đã dùng!";
+            elements.hintBtn.disabled = true;
+
+            const items = elements.playerBoard.children;
+            for (let i = 0; i < 2; i++) {
+                if (gameState.playerOrder[i] === gameState.correctOrder[i]) {
+                    items[i].classList.add("highlight-correct");
+                    setTimeout(() => items[i].classList.remove("highlight-correct"), 2000);
+                }
+            }
+        };
+
+        // ✅ SUBMIT - SỬA LỖI LOOP VÁN
+        elements.submitBtn.onclick = checkResults;
+
+        function checkResults() {
+            gameState.playerOrder = Array.from(elements.playerBoard.children).map(c => c.textContent);
+            elements.submitBtn.style.display = "none";
+            elements.hintBtn.style.display = "none";
+            elements.status.style.display = "none";
+
+            let playerRoundScore = 0, aiRoundScore = 0;
+            const playerItems = elements.playerBoard.children;
+            const aiItems = elements.aiBoard.children;
+
+            for (let i = 0; i < 5; i++) {
+                if (gameState.playerOrder[i] === gameState.correctOrder[i]) {
+                    playerItems[i].classList.add("highlight-correct");
+                    playerRoundScore++;
+                } else {
+                    playerItems[i].classList.add("highlight-wrong");
+                }
+
+                if (gameState.aiOrder[i] === gameState.correctOrder[i]) {
+                    aiItems[i].classList.add("highlight-correct");
+                    aiRoundScore++;
+                } else {
+                    aiItems[i].classList.add("highlight-wrong");
+                }
+            }
+
+            gameState.playerScore += playerRoundScore;
+            gameState.aiScore += aiRoundScore;
+            updateUI();
+
+            displayRoundResults(playerRoundScore, aiRoundScore);
+            checkAchievements(playerRoundScore);
+
+            if (gameState.round < gameState.maxRounds) {
+                setTimeout(() => {
+                    gameState.round++;
+                    updateUI();
+                    startRound(); // ✅ TỰ ĐỘNG LOOP VÁN
+                }, 3000);
+            } else {
+                setTimeout(showFinalResults, 3500);
+            }
+        }
+
+        function displayRoundResults(playerRound, aiRound) {
+            elements.result.style.display = "block"; /* Hiển thị làm header */
+            const correctBoard = createBoardHTML(gameState.correctOrder, true);
+            elements.result.innerHTML = `
+                <h3>📊 Kết quả</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <p class="stat-number">${playerRound}</p>
+                        <p>Bạn</p>
+                    </div>
+                    <div class="stat-box">
+                        <p class="stat-number">${aiRound}</p>
+                        <p>AI</p>
+                    </div>
+                </div>
+                <div style="margin: 20px 0;">
+                    <div class="label">✅ Thứ tự ĐÚNG:</div>
+                    ${correctBoard}
+                </div>
+                ${playerRound === 5 ? '<p style="color:#22c55e;font-size:1.3em;">⭐ HOÀN HẢO!</p>' : ''}
+                ${gameState.round < gameState.maxRounds ? '<p style="color:#374151;">⏳ 3 giây nữa → Ván ${gameState.round + 1}</p>' : ''}
+            `;
+        }
+
+        function showFinalResults() {
+            const totalPlayer = gameState.playerScore;
+            const totalAI = gameState.aiScore;
+            const resultColor = totalPlayer > totalAI ? "#22c55e" : totalPlayer === totalAI ? "#f59e0b" : "#ef4444";
+
+            elements.result.innerHTML += `
+                <div style="border-top: 3px solid ${resultColor}; padding-top: 20px; margin-top: 20px;">
+                    <h2 style="color:${resultColor}">🏆 KẾT QUẢ CUỐI!</h2>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <p class="stat-number">${totalPlayer}</p>
+                            <p>Tổng bạn</p>
+                        </div>
+                        <div class="stat-box">
+                            <p class="stat-number">${totalAI}</p>
+                            <p>Tổng AI</p>
+                        </div>
+                    </div>
+                    <p style="font-size:1.5em;margin:20px 0;">
+                        ${totalPlayer > totalAI ? "🎉 BẠN THẮNG!" : totalPlayer === totalAI ? "🤝 HÒA!" : "🤖 AI THẮNG!"}
+                    </p>
+                    <button onclick="location.reload()" style="background:#22c55e;font-size:1.2em;padding:15px 30px;">🔥 CHƠI LẠI</button>
+                </div>
+            `;
+        }
+
+        function checkAchievements(playerRound) {
+            if (gameState.round === 1 && playerRound === 5) showAchievement("firstWin");
+            if (playerRound === 5) showAchievement("perfectRound");
+        }
+
+        function showAchievement(key) {
+            const achievements = {
+                firstWin: { title: "🚀 Khởi đầu hoàn hảo!", desc: "5/5 ván đầu!" },
+                perfectRound: { title: "⭐ Hoàn hảo!", desc: "5/5 đúng thứ tự!" }
+            };
+            const ach = achievements[key];
+            document.getElementById("achievement-title").textContent = ach.title;
+            document.getElementById("achievement-desc").textContent = ach.desc;
+            document.getElementById("achievement-modal").style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById("achievement-modal").style.display = "none";
+        }
+
+        // ✅ UTILS
+        function shuffle(array) {
+            return [...array].sort(() => Math.random() - 0.5);
+        }
+
+        function createBoardHTML(order, correct = false) {
+            const board = document.createElement("div");
+            board.className = "board";
+            order.forEach(img => {
+                const div = createImageBox(img);
+                if (correct) div.classList.add("highlight-correct");
+                board.appendChild(div);
+            });
+            return board.outerHTML;
+        }
+
+        function updateUI() {
+            // Bỏ update header vì đã bỏ
+        }
+
+        // ✅ GLOBAL FUNCTIONS
+        window.startRound = startRound;
+        window.closeModal = closeModal;
+    </script>
+</body>
+
+</html>
