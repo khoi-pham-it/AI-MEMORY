@@ -26,15 +26,18 @@
             border-radius: 20px;
             padding: 25px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            transition: filter 0.3s ease;
+        }
+
+        body.modal-open #game-area {
+            filter: blur(5px);
         }
 
         /* Bỏ header hiện tại, kết quả sẽ đưa lên top khi cần */
 
         .board {
             display: grid;
-            /* Mặc định cho ghi nhớ: ngang */
-            grid-template-columns: repeat(5, 1fr);
-            /* Buộc ngang 5 cột */
+            grid-template-columns: repeat(3, 1fr);
             justify-content: center;
             gap: 12px;
             margin: 15px 0;
@@ -42,12 +45,6 @@
             border-radius: 12px;
             background: #f8fafc;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        #player-board.board,
-        #ai-board.board {
-            /* Cho player và AI: 3 trên, 2 dưới */
-            grid-template-columns: repeat(3, 1fr);
         }
 
         #image-sequence {
@@ -118,7 +115,7 @@
             padding: 15px;
             background: linear-gradient(135deg, #eff6ff, #dbeafe);
             border-radius: 12px;
-            
+
         }
 
         /* Countdown styles */
@@ -328,6 +325,19 @@
             border-radius: 20px;
             max-width: 400px;
             text-align: center;
+            animation: popIn 0.5s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
         }
 
         @media (max-width: 768px) {
@@ -339,6 +349,7 @@
 
             .board {
                 grid-template-columns: repeat(3, 1fr);
+
             }
 
             /* Adjust for mobile */
@@ -386,7 +397,7 @@
         <!-- Bỏ header, result sẽ làm header khi cần -->
 
         <div id="difficulty-selection">
-            <h2>🎮 Chọn độ khó AI (5 hình)</h2>
+            <h2>🎮 Chọn độ khó AI</h2>
             <button class="difficulty-btn" data-level="easy">🟢 DỄ</button>
             <button class="difficulty-btn" data-level="medium">🔵 TRUNG BÌNH</button>
             <button class="difficulty-btn" data-level="hard">🔴 KHÓ</button>
@@ -418,18 +429,23 @@
         <div class="modal-content">
             <h2 id="achievement-title">🎉 Thành tựu!</h2>
             <p id="achievement-desc"></p>
-            <button onclick="closeModal()">Tiếp tục</button>
+            <button id="modal-button" onclick="closeModal()">Tiếp tục</button>
         </div>
     </div>
 
     <script>
-        // ✅ CHỈ 5 HÌNH ẢNH
-        const IMAGES = ["🍎", "🍌", "🍇", "🍊", "🍉"];
+        // ✅ HÌNH ẢNH
+        const IMAGES = ["🍎", "🍌", "🍇", "🍊", "🍉", "🍓", "🍒"];
         let gameState = {
             correctOrder: [], playerOrder: [], aiOrder: [],
             aiDifficulty: "medium", round: 1, maxRounds: 1,
-            playerScore: 0, aiScore: 0, sequenceSpeed: 1500
+            playerScore: 0, aiScore: 0, sequenceSpeed: 1500,
+            numImages: 6,
+            aiSwapsMin: 1,
+            aiSwapsRand: 2
         };
+
+        let achievementsUnlocked = [];
 
         // ✅ ELEMENTS - HOÀN CHỈNH
         const elements = {
@@ -458,6 +474,7 @@
             document.querySelectorAll('.highlight-correct, .highlight-wrong').forEach(el => {
                 el.classList.remove('highlight-correct', 'highlight-wrong');
             });
+            achievementsUnlocked = []; // Reset achievements for new game if needed
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -468,8 +485,22 @@
             document.querySelectorAll(".difficulty-btn").forEach(btn => {
                 btn.onclick = () => {
                     gameState.aiDifficulty = btn.dataset.level;
-                    gameState.sequenceSpeed = btn.dataset.level === "easy" ? 2000 :
-                        btn.dataset.level === "medium" ? 1500 : 1000;
+                    if (gameState.aiDifficulty === "easy") {
+                        gameState.numImages = 5;
+                        gameState.sequenceSpeed = 2000;
+                        gameState.aiSwapsMin = 2;
+                        gameState.aiSwapsRand = 2; // 2-3
+                    } else if (gameState.aiDifficulty === "medium") {
+                        gameState.numImages = 6;
+                        gameState.sequenceSpeed = 1500;
+                        gameState.aiSwapsMin = 1;
+                        gameState.aiSwapsRand = 2; // 1-2
+                    } else {
+                        gameState.numImages = 7;
+                        gameState.sequenceSpeed = 1000;
+                        gameState.aiSwapsMin = 0;
+                        gameState.aiSwapsRand = 2; // 0-1
+                    }
                     document.getElementById("difficulty-selection").style.display = "none";
                     startRound();
                 };
@@ -479,8 +510,8 @@
         // ✅ HÀM START ROUND - SỬA LỖI LOOP
         function startRound() {
             resetForNewRound();
-            elements.status.textContent = `Ghi nhớ 5 hình!`;
-            gameState.correctOrder = shuffle([...IMAGES]);
+            elements.status.textContent = `Ghi nhớ ${gameState.numImages} hình!`;
+            gameState.correctOrder = shuffle(IMAGES.slice(0, gameState.numImages));
             elements.imageSeq.style.display = "flex";
             startCountdown(showSequence);
         }
@@ -498,7 +529,7 @@
                     elements.status.textContent = "GO!";
                     setTimeout(() => {
                         document.body.classList.remove('countdown');
-                        elements.status.textContent = `Ghi nhớ 5 hình!`;
+                        elements.status.textContent = `Ghi nhớ ${gameState.numImages} hình!`;
                         callback();
                     }, 800);
                 }
@@ -509,7 +540,7 @@
             elements.imageSeq.innerHTML = "";
             let i = 0;
             const showNext = () => {
-                if (i >= 5) {
+                if (i >= gameState.numImages) {
                     setTimeout(startPlayerPhase, 1500);
                     return;
                 }
@@ -529,7 +560,7 @@
             elements.submitBtn.style.display = "inline-block";
             elements.imageSeq.style.display = "none";
 
-            const shuffled = shuffle([...IMAGES]);
+            const shuffled = shuffle(IMAGES.slice(0, gameState.numImages));
             setupPlayerBoard(shuffled);
             simulateAdvancedAI();
         }
@@ -592,22 +623,13 @@
 
         function calculateAIOrder() {
             let aiOrder = [...gameState.correctOrder];
-            const difficulty = gameState.aiDifficulty;
-            let numSwaps = 0;
-
-            if (difficulty === "easy") {
-                numSwaps = 2 + Math.floor(Math.random() * 2); // 2-3 swaps (AI sai nhiều hơn)
-            } else if (difficulty === "medium") {
-                numSwaps = 1 + Math.floor(Math.random() * 2); // 1-2 swaps
-            } else {
-                numSwaps = Math.floor(Math.random() * 2); // 0-1 swaps (AI sai ít hơn)
-            }
+            const numSwaps = gameState.aiSwapsMin + Math.floor(Math.random() * gameState.aiSwapsRand);
 
             for (let s = 0; s < numSwaps; s++) {
-                const i1 = Math.floor(Math.random() * 5);
-                let i2 = Math.floor(Math.random() * 5);
+                const i1 = Math.floor(Math.random() * gameState.numImages);
+                let i2 = Math.floor(Math.random() * gameState.numImages);
                 while (i2 === i1) {
-                    i2 = Math.floor(Math.random() * 5);
+                    i2 = Math.floor(Math.random() * gameState.numImages);
                 }
                 [aiOrder[i1], aiOrder[i2]] = [aiOrder[i2], aiOrder[i1]];
             }
@@ -642,7 +664,7 @@
             const playerItems = elements.playerBoard.children;
             const aiItems = elements.aiBoard.children;
 
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < gameState.numImages; i++) {
                 if (gameState.playerOrder[i] === gameState.correctOrder[i]) {
                     playerItems[i].classList.add("highlight-correct");
                     playerRoundScore++;
@@ -680,22 +702,11 @@
             elements.result.style.display = "block"; /* Hiển thị làm header */
             const correctBoard = createBoardHTML(gameState.correctOrder, true);
             elements.result.innerHTML = `
-                <h3>📊 Kết quả</h3>
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <p class="stat-number">${playerRound}</p>
-                        <p>Bạn</p>
-                    </div>
-                    <div class="stat-box">
-                        <p class="stat-number">${aiRound}</p>
-                        <p>AI</p>
-                    </div>
-                </div>
                 <div style="margin: 20px 0;">
                     <div class="label">✅ Thứ tự ĐÚNG:</div>
                     ${correctBoard}
                 </div>
-                ${playerRound === 5 ? '<p style="color:#22c55e;font-size:1.3em;">⭐ HOÀN HẢO!</p>' : ''}
+                ${playerRound === gameState.numImages ? '<p style="color:#22c55e;font-size:1.3em;">⭐ HOÀN HẢO!</p>' : ''}
                 ${gameState.round < gameState.maxRounds ? '<p style="color:#374151;">⏳ 3 giây nữa → Ván ${gameState.round + 1}</p>' : ''}
             `;
         }
@@ -705,45 +716,44 @@
             const totalAI = gameState.aiScore;
             const resultColor = totalPlayer > totalAI ? "#22c55e" : totalPlayer === totalAI ? "#f59e0b" : "#ef4444";
 
-            elements.result.innerHTML += `
-                <div style="border-top: 3px solid ${resultColor}; padding-top: 20px; margin-top: 20px;">
-                    <h2 style="color:${resultColor}">🏆 KẾT QUẢ CUỐI!</h2>
-                    <div class="stats-grid">
-                        <div class="stat-box">
-                            <p class="stat-number">${totalPlayer}</p>
-                            <p>Tổng bạn</p>
-                        </div>
-                        <div class="stat-box">
-                            <p class="stat-number">${totalAI}</p>
-                            <p>Tổng AI</p>
-                        </div>
-                    </div>
-                    <p style="font-size:1.5em;margin:20px 0;">
-                        ${totalPlayer > totalAI ? "🎉 BẠN THẮNG!" : totalPlayer === totalAI ? "🤝 HÒA!" : "🤖 AI THẮNG!"}
-                    </p>
-                    <button onclick="location.reload()" style="background:#22c55e;font-size:1.2em;padding:15px 30px;">🔥 CHƠI LẠI</button>
-                </div>
-            `;
+            const title = totalPlayer > totalAI ? "🎉 BẠN THẮNG!" : totalPlayer === totalAI ? "🤝 HÒA!" : "🤖 AI THẮNG!";
+            const message = totalPlayer > totalAI ? "Chúc mừng Người chơi đã thắng!" : totalPlayer === totalAI ? "Kết quả hòa!" : "Hãy cố gắng lần sau!";
+
+            if (totalPlayer > totalAI) {
+                achievementsUnlocked.push("gameWin");
+            }
+
+            let achievementsHTML = '';
+            if (achievementsUnlocked.length > 0) {
+                const achievements = {
+                    firstWin: { title: "🚀 Khởi đầu hoàn hảo!", desc: `${gameState.numImages}/${gameState.numImages} ván đầu!` },
+                    perfectRound: { title: "⭐ Hoàn hảo!", desc: `${gameState.numImages}/${gameState.numImages} đúng thứ tự!` },
+                    gameWin: { title: "🏆 Bạn Thắng Cuộc!", desc: "Bạn đã đánh bại AI một cách xuất sắc!" }
+                };
+                achievementsHTML = '<div><h3>Thành tựu mở khóa:</h3><ul>';
+                achievementsUnlocked.forEach(key => {
+                    const ach = achievements[key];
+                    achievementsHTML += `<li><strong>${ach.title}</strong>: ${ach.desc}</li>`;
+                });
+                achievementsHTML += '</ul></div>';
+            }
+
+            document.getElementById("achievement-title").textContent = title;
+            document.getElementById("achievement-desc").innerHTML = `${message}<br><br><div class="stats-grid"><div class="stat-box"><p class="stat-number">${totalPlayer}</p><p>Điểm Người Chơi</p></div><div class="stat-box"><p class="stat-number">${totalAI}</p><p>Điểm AI</p></div></div>${achievementsHTML}`;
+            document.getElementById("modal-button").textContent = "🔥 CHƠI LẠI";
+            document.getElementById("modal-button").onclick = () => location.reload();
+            document.getElementById("achievement-modal").style.display = "block";
+            document.body.classList.add('modal-open');
         }
 
         function checkAchievements(playerRound) {
-            if (gameState.round === 1 && playerRound === 5) showAchievement("firstWin");
-            if (playerRound === 5) showAchievement("perfectRound");
-        }
-
-        function showAchievement(key) {
-            const achievements = {
-                firstWin: { title: "🚀 Khởi đầu hoàn hảo!", desc: "5/5 ván đầu!" },
-                perfectRound: { title: "⭐ Hoàn hảo!", desc: "5/5 đúng thứ tự!" }
-            };
-            const ach = achievements[key];
-            document.getElementById("achievement-title").textContent = ach.title;
-            document.getElementById("achievement-desc").textContent = ach.desc;
-            document.getElementById("achievement-modal").style.display = "block";
+            if (gameState.round === 1 && playerRound === gameState.numImages) achievementsUnlocked.push("firstWin");
+            if (playerRound === gameState.numImages) achievementsUnlocked.push("perfectRound");
         }
 
         function closeModal() {
             document.getElementById("achievement-modal").style.display = "none";
+            document.body.classList.remove('modal-open');
         }
 
         // ✅ UTILS
