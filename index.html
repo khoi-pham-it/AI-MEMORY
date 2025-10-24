@@ -4,28 +4,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Ghi Nhớ Hình Ảnh</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Ghi nhớ hình ảnh trái cây</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Roboto', sans-serif;
             text-align: center;
             background: linear-gradient(135deg, #CCFFAA 0%, #1E5B53 100%);
             margin: 0;
             padding: 20px;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url('https://i.pinimg.com/originals/36/a1/87/36a1874f7c7f3aaadb4284ea22a69264.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: blur(5px);
+            opacity: 0.5;
+            mix-blend-mode: overlay;
+            z-index: -1;
         }
 
         #game-area {
-            max-width: 800px;
+            max-width: 1400px;
+            /* Tăng chiều rộng */
             width: 100%;
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            background: #fefce8;
+            border: 12px solid #4ade80;
+            /* Tăng độ dày border */
+            border-radius: 40px;
+            /* Làm bo góc lớn hơn */
+
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+            /* Tăng shadow */
             transition: filter 0.3s ease;
         }
 
@@ -33,51 +57,57 @@
             filter: blur(5px);
         }
 
+
         /* Bỏ header hiện tại, kết quả sẽ đưa lên top khi cần */
 
         .board {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
+            /* Thay đổi thành flex để sắp xếp trên 1 hàng ngang */
+            flex-direction: row;
             justify-content: center;
-            gap: 12px;
-            margin: 15px 0;
-            padding: 12px;
-            border-radius: 12px;
+            gap: 16px;
+            /* Tăng gap */
+            flex-wrap: nowrap;
+            overflow-x: hidden;
+            /* Bỏ scrollbar */
+            margin: 20px 0;
+            padding: 16px;
+            border-radius: 16px;
             background: #f8fafc;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.05);
         }
 
         #image-sequence {
             display: flex;
             flex-direction: row;
             justify-content: center;
-            gap: 12px;
+            gap: 16px;
             flex-wrap: nowrap;
-            overflow-x: auto;
-            margin: 15px 0;
-            padding: 12px;
-            border-radius: 12px;
+            overflow-x: hidden;
+            margin: 20px 0;
+            padding: 16px;
+            border-radius: 16px;
             background: #f8fafc;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.05);
         }
 
         .image-box {
-            width: 60px;
-            /* Scale nhỏ */
-            height: 60px;
-            border: 3px solid #d1d5db;
-            border-radius: 15px;
-            font-size: 30px;
-            /* Scale nhỏ font */
+            width: 70px;
+            /* Tăng kích thước hình ảnh */
+            height: 70px;
+            border: 4px solid #d1d5db;
+            border-radius: 20px;
+            font-size: 35px;
             display: flex;
             justify-content: center;
             align-items: center;
             background: white;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
             cursor: grab;
             position: relative;
-            flex-shrink: 0;
+            flex-shrink: 1;
+            min-width: 0;
         }
 
         .image-box:active {
@@ -85,12 +115,12 @@
         }
 
         .image-box:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(-5px) scale(1.08);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
         }
 
         #ai-board .image-box {
-            border: 3px solid #9ca3af;
+            border: 4px solid #9ca3af;
             background: #f1f5f9;
             cursor: default;
         }
@@ -101,24 +131,45 @@
         }
 
         .label {
-            font-weight: 600;
-            margin: 20px 0 8px;
+            font-weight: 700;
+            margin: 25px 0 10px;
             color: #1e293b;
-            font-size: 1.2em;
+            font-size: 1.4em;
         }
 
         #status {
             font-weight: 600;
             color: #1e293b;
+            /* margin: 25px 0; */
+            font-size: 1.2em;
+            /* padding: 20px; */
+            border-radius: 16px;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            font-size: 2.5em;
+            color: #ffd700;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
             margin: 20px 0;
-            font-size: 1.1em;
-            padding: 15px;
-            background: linear-gradient(135deg, #eff6ff, #dbeafe);
-            border-radius: 12px;
 
         }
 
+        /* #status.highlight {
+            font-size: 2.5em;
+            color: #ffd700;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+            margin: 20px 0;
+        } */
+
         /* Countdown styles */
+        /* Khi đang countdown - làm mờ toàn nền và nổi countdown */
+        body.countdown #game-area {
+            filter: blur(8px);
+            pointer-events: none;
+            /* Khóa tương tác */
+            transition: filter 0.3s ease;
+        }
+
         body.countdown::before {
             content: '';
             position: fixed;
@@ -126,8 +177,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 1000;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 998;
         }
 
         body.countdown #status {
@@ -135,35 +186,38 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: clamp(4em, 15vw, 10em);
+            font-size: clamp(3em, 10vw, 5em);
+            /* Tăng kích thước chữ countdown */
             font-weight: bold;
             color: #fff;
-            text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
-            z-index: 1001;
-            background: none !important;
+            text-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            background: transparent !important;
             padding: 0 !important;
             border-radius: 0 !important;
-            border-left: none !important;
+            border: none !important;
             margin: 0 !important;
+            opacity: 1;
+            transition: opacity 0.5s ease;
         }
 
         button {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
+            padding: 15px 30px;
+            border-radius: 12px;
             cursor: pointer;
-            margin: 8px;
-            font-size: 1em;
-            font-weight: 500;
+            margin: 10px;
+            font-size: 1.2em;
+            font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5);
         }
 
         button:disabled {
@@ -173,91 +227,100 @@
         }
 
         #difficulty-selection {
-            margin: 20px auto;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin: 25px auto;
+            padding: 25px;
+            background: #fefce8;
+            border-radius: 20px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        #difficulty-selection h2 {
+            font-size: 2.5em;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .gamepad-icon {
+            font-size: 1.5em;
+            color: #7c3aed;
         }
 
         .difficulty-btn {
-            background: transparent;
-            border: 3px solid;
-            color: inherit;
-            border-radius: 12px;
-            padding: 12px 20px;
-            margin: 8px;
+            border: none;
+            color: white;
+            border-radius: 15px;
+            padding: 15px 25px;
+            margin: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 1.1em;
-            font-weight: 600;
+            font-size: 1.3em;
+            font-weight: 700;
         }
 
         .difficulty-btn[data-level="easy"] {
-            border-color: #22c55e;
-            color: #22c55e;
+            background: #22c55e;
+            box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
         }
 
         .difficulty-btn[data-level="easy"]:hover {
-            background: #22c55e;
-            color: white;
-            transform: scale(1.05);
+            background: #16a34a;
+            transform: scale(1.08);
+            box-shadow: 0 8px 24px rgba(34, 197, 94, 0.5);
         }
 
         .difficulty-btn[data-level="medium"] {
-            border-color: #3b82f6;
-            color: #3b82f6;
+            background: #3b82f6;
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
         }
 
         .difficulty-btn[data-level="medium"]:hover {
-            background: #3b82f6;
-            color: white;
-            transform: scale(1.05);
+            background: #2563eb;
+            transform: scale(1.08);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5);
         }
 
         .difficulty-btn[data-level="hard"] {
-            border-color: #ef4444;
-            color: #ef4444;
+            background: #ef4444;
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
         }
 
         .difficulty-btn[data-level="hard"]:hover {
-            background: #ef4444;
-            color: white;
-            transform: scale(1.05);
+            background: #dc2626;
+            transform: scale(1.08);
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.5);
         }
 
         #result {
             margin-top: 0;
-            /* Đưa lên top làm header */
-            padding: 20px;
+            padding: 25px;
             background: linear-gradient(135deg, #fef3c7, #fde68a);
-            border-radius: 15px 15px 0 0;
-            /* Làm header */
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
         }
 
         #result h3 {
-            margin: 0 0 15px;
+            margin: 0 0 20px;
             color: #92400e;
-            font-size: 1.5em;
+            font-size: 1.8em;
         }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin: 15px 0;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
         }
 
         .stat-box {
             background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .stat-number {
-            font-size: 2em;
+            font-size: 2.5em;
             font-weight: 700;
             margin: 0;
         }
@@ -265,14 +328,14 @@
         .highlight-correct {
             border-color: #22c55e !important;
             background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important;
-            box-shadow: 0 0 20px #22c55e40 !important;
+            box-shadow: 0 0 25px #22c55e50 !important;
             animation: correctPulse 0.6s ease;
         }
 
         .highlight-wrong {
             border-color: #ef4444 !important;
             background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
-            box-shadow: 0 0 20px #ef444440 !important;
+            box-shadow: 0 0 25px #ef444450 !important;
             animation: wrongShake 0.6s ease;
         }
 
@@ -322,8 +385,9 @@
             transform: translate(-50%, -50%);
             background: white;
             padding: 30px;
-            border-radius: 20px;
-            max-width: 400px;
+            border-radius: 25px;
+            width: 700px;
+            max-width: 95vw;
             text-align: center;
             animation: popIn 0.5s ease-out;
         }
@@ -341,29 +405,55 @@
         }
 
         @media (max-width: 768px) {
+            .play-areas {
+                flex-direction: column;
+            }
+
             .image-box {
-                width: 50px;
-                height: 50px;
-                font-size: 25px;
+                width: 55px;
+                height: 55px;
+                font-size: 28px;
             }
 
             .board {
-                grid-template-columns: repeat(3, 1fr);
-
+                gap: 10px;
+                justify-content: space-between;
+                overflow-x: hidden;
             }
 
-            /* Adjust for mobile */
             #image-sequence {
                 justify-content: flex-start;
+                gap: 10px;
+                padding: 10px;
+                overflow-x: hidden;
+            }
+
+            .modal-content {
+                width: 95vw;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .image-box {
+                width: 40px;
+                height: 40px;
+                font-size: 22px;
+            }
+
+            .board,
+            #image-sequence {
+                gap: 8px;
+                padding: 8px;
+                justify-content: center;
             }
         }
 
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3b82f6;
+            width: 24px;
+            height: 24px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -382,34 +472,60 @@
         .play-areas {
             display: flex;
             justify-content: space-between;
-            gap: 20px;
+            gap: 25px;
         }
 
         .play-area {
             flex: 1;
+            min-width: 0;
         }
 
         /* Cập nhật để khoảng cách bằng nhau */
         #result .board {
-            gap: 12px;
-            /* Bằng với gap của .board ở phần Người chơi và AI */
+            gap: 16px;
+        }
+
+        #game-title {
+            color: #e7e247;
+            font-size: 3em;
+            /* Tăng kích thước tiêu đề */
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            margin: 30px 0 10px 0;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        /* 🕹️ Ẩn tiêu đề khi vào chế độ chơi */
+        body.playing #game-title {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            }
+
+            to {
+                text-shadow: 0 0 20px #454444, 0 0 30px #3f3f3d;
+            }
         }
     </style>
 </head>
 
 <body>
 
+    <h1 id="game-title">Ghi nhớ hình ảnh trái cây</h1>
+    <div id="status"></div>
     <div id="game-area">
         <!-- Bỏ header, result sẽ làm header khi cần -->
 
         <div id="difficulty-selection">
-            <h2>🎮 Chọn độ khó AI</h2>
-            <button class="difficulty-btn" data-level="easy">🟢 DỄ</button>
-            <button class="difficulty-btn" data-level="medium">🔵 TRUNG BÌNH</button>
-            <button class="difficulty-btn" data-level="hard">🔴 KHÓ</button>
+            <h2><span class="gamepad-icon">🎮</span> Hãy chọn độ khó nào! </h2>
+            <button class="difficulty-btn" data-level="easy">DỄ</button>
+            <button class="difficulty-btn" data-level="medium">TRUNG BÌNH</button>
+            <button class="difficulty-btn" data-level="hard">KHÓ</button>
         </div>
 
-        <div id="status">Đang khởi tạo trò chơi...</div>
 
         <div id="image-sequence" style="display:none;"></div>
 
@@ -480,6 +596,8 @@
             document.querySelectorAll('.highlight-correct, .highlight-wrong').forEach(el => {
                 el.classList.remove('highlight-correct', 'highlight-wrong');
             });
+            elements.status.classList.remove('highlight');
+            document.getElementById("game-title").style.display = "none";
             achievementsUnlocked = []; // Reset achievements for new game if needed
         }
 
@@ -524,15 +642,31 @@
 
         function startCountdown(callback) {
             document.body.classList.add('countdown');
-            let count = 3;
-            elements.status.textContent = `${count}`;
+            const difficultyText = gameState.aiDifficulty === "easy" ? "Dễ" : gameState.aiDifficulty === "medium" ? "Trung Bình" : "Khó";
+            const messages = [
+                `Bạn đã chọn chế độ '${difficultyText}'`,
+                "Hãy chuẩn bị nhé",
+                "3",
+                "2",
+                "1",
+                "GO!"
+            ];
+            let index = 0;
+            elements.status.style.opacity = 0;
+            setTimeout(() => {
+                elements.status.textContent = messages[index];
+                elements.status.style.opacity = 1;
+            }, 100);
             const interval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    elements.status.textContent = `${count}`;
+                index++;
+                if (index < messages.length) {
+                    elements.status.style.opacity = 0;
+                    setTimeout(() => {
+                        elements.status.textContent = messages[index];
+                        elements.status.style.opacity = 1;
+                    }, 500); // Half of interval for fade out/in
                 } else {
                     clearInterval(interval);
-                    elements.status.textContent = "GO!";
                     setTimeout(() => {
                         document.body.classList.remove('countdown');
                         elements.status.textContent = `Ghi nhớ ${gameState.numImages} hình!`;
@@ -563,8 +697,10 @@
             elements.aiArea.style.display = "block";
             elements.playAreas.style.display = "flex";
             elements.status.textContent = `Sắp xếp đúng thứ tự!`;
+            elements.status.classList.add('highlight');
             elements.submitBtn.style.display = "inline-block";
             elements.imageSeq.style.display = "none";
+            document.getElementById("game-title").style.display = "none";
 
             const shuffled = shuffle(IMAGES.slice(0, gameState.numImages));
             setupPlayerBoard(shuffled);
@@ -708,11 +844,11 @@
             elements.result.style.display = "block"; /* Hiển thị làm header */
             const correctBoard = createBoardHTML(gameState.correctOrder, true);
             elements.result.innerHTML = `
-                <div style="margin: 20px 0;">
+                <div style="margin: 25px 0;">
                     <div class="label">✅ Thứ tự ĐÚNG:</div>
                     ${correctBoard}
                 </div>
-                ${playerRound === gameState.numImages ? '<p style="color:#22c55e;font-size:1.3em;">⭐ HOÀN HẢO!</p>' : ''}
+                ${playerRound === gameState.numImages ? '<p style="color:#22c55e;font-size:1.5em;">⭐ HOÀN HẢO!</p>' : ''}
                 ${gameState.round < gameState.maxRounds ? '<p style="color:#374151;">⏳ 3 giây nữa → Ván ${gameState.round + 1}</p>' : ''}
             `;
         }
