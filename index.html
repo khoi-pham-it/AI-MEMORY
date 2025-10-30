@@ -834,6 +834,10 @@
         elements.submitBtn.onclick = checkResults;
 
         function checkResults() {
+            if (gameState.aiOrder.length === 0) {
+                alert("AI đang suy nghĩ, vui lòng chờ một chút!");
+                return;
+            }
             gameState.playerOrder = Array.from(elements.playerBoard.children).map(c => c.textContent);
             elements.submitBtn.style.display = "none";
             elements.status.style.display = "none";
