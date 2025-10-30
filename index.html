@@ -164,10 +164,9 @@
         /* Countdown styles */
         /* Khi đang countdown - làm mờ toàn nền và nổi countdown */
         body.countdown #game-area {
-            filter: blur(8px);
+            display: none;
             pointer-events: none;
             /* Khóa tương tác */
-            transition: filter 0.3s ease;
         }
 
         body.countdown::before {
@@ -228,7 +227,6 @@
 
         #difficulty-selection {
             margin: 25px auto;
-            padding: 25px;
             background: #fefce8;
             border-radius: 20px;
             box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
@@ -336,6 +334,13 @@
             border-color: #ef4444 !important;
             background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
             box-shadow: 0 0 25px #ef444450 !important;
+            animation: wrongShake 0.6s ease;
+        }
+
+        .highlight-swap {
+            border-color: #ffd700 !important;
+            background: linear-gradient(135deg, #fffbeb, #fef08a) !important;
+            box-shadow: 0 0 25px #ffd70050 !important;
             animation: wrongShake 0.6s ease;
         }
 
@@ -543,18 +548,83 @@
                 opacity: 0;
             }
         }
+
+        /* Icon row styles */
+        .icon-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .icon-box {
+            width: 70px;
+            height: 60px;
+            border: 3px solid #d1d5db;
+            border-radius: 15px;
+            font-size: 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            animation: shake 2s infinite ease-in-out;
+        }
+
+        .icon-box:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-3px);
+            }
+
+            50% {
+                transform: translateX(3px);
+            }
+
+            75% {
+                transform: translateX(-3px);
+            }
+        }
+
+        .menu-desc {
+            font-size: 1em;
+            color: #555;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 
 <body>
 
-    <h1 id="game-title">Ghi nhớ hình ảnh trái cây cùng AI</h1>
+    <h1 id="game-title">GHI NHỚ HÌNH ẢNH TRÁI CÂY CÙNG A.I</h1>
     <div id="status"></div>
     <div id="game-area">
         <!-- Bỏ header, result sẽ làm header khi cần -->
 
         <div id="difficulty-selection">
             <h2><span class="gamepad-icon">🎮</span> Hãy chọn độ khó nào! </h2>
+            <div class="menu-desc">Thử thách trí nhớ của bạn bằng cách ghi nhớ và sắp xếp thứ tự các hình ảnh trái cây
+                cùng với AI!</div>
+            <div class="icon-row">
+                <div class="icon-box">🍎</div>
+                <div class="icon-box">🍌</div>
+                <div class="icon-box">🍇</div>
+                <div class="icon-box">🍊</div>
+                <div class="icon-box">🍉</div>
+                <div class="icon-box">🧠</div>
+                <div class="icon-box">💡</div>
+            </div>
             <button class="difficulty-btn" data-level="easy">DỄ</button>
             <button class="difficulty-btn" data-level="medium">TRUNG BÌNH</button>
             <button class="difficulty-btn" data-level="hard">KHÓ</button>
@@ -600,7 +670,8 @@
             playerScore: 0, aiScore: 0, sequenceSpeed: 1500,
             numImages: 6,
             aiSwapsMin: 1,
-            aiSwapsRand: 2
+            aiSwapsRand: 2,
+            aiReady: false
         };
 
         let achievementsUnlocked = [];
@@ -638,6 +709,7 @@
             document.getElementById("game-title").style.display = "none";
             achievementsUnlocked = []; // Reset achievements for new game if needed
             elements.aiLabel.textContent = "🤖 AI sắp xếp:";
+            gameState.aiReady = false;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -743,7 +815,16 @@
 
             const shuffled = shuffle(IMAGES.slice(0, gameState.numImages));
             setupPlayerBoard(shuffled);
+            setupAIBoard(shuffled.slice());
             simulateAdvancedAI();
+        }
+
+        function setupAIBoard(shuffled) {
+            elements.aiBoard.innerHTML = "";
+            shuffled.forEach((img) => {
+                const div = createImageBox(img);
+                elements.aiBoard.appendChild(div);
+            });
         }
 
         function createImageBox(img) {
@@ -798,7 +879,8 @@
             setTimeout(() => {
                 elements.aiLoading.style.display = "none";
                 gameState.aiOrder = calculateAIOrder();
-                showAISequence();
+                gameState.aiReady = false;
+                arrangeAI();
             }, getAIDelay());
         }
 
@@ -818,20 +900,46 @@
             return aiOrder;
         }
 
-        function showAISequence() {
-            elements.aiBoard.innerHTML = "";
-            let i = 0;
-            const showNextAI = () => {
-                if (i >= gameState.numImages) {
-                    elements.aiLabel.textContent = "🤖 AI đã sắp xếp xong:";
-                    return;
+        function arrangeAI() {
+            const boardChildren = Array.from(elements.aiBoard.children);
+            let delay = 0;
+            const swapDelay = 600;
+
+            for (let i = 0; i < gameState.numImages; i++) {
+                const target = gameState.aiOrder[i];
+                let j = i;
+                for (; j < gameState.numImages; j++) {
+                    if (boardChildren[j].textContent === target) {
+                        break;
+                    }
                 }
-                const div = createImageBox(gameState.aiOrder[i]);
-                elements.aiBoard.appendChild(div);
-                i++;
-                setTimeout(showNextAI, gameState.sequenceSpeed / 2); // Faster than sequence show for dynamism
-            };
-            showNextAI();
+                if (j !== i) {
+                    setTimeout(() => {
+                        boardChildren[i].classList.add('highlight-swap');
+                        boardChildren[j].classList.add('highlight-swap');
+                        setTimeout(() => {
+                            elements.aiBoard.insertBefore(boardChildren[j], boardChildren[i]);
+                            const temp = boardChildren[i];
+                            boardChildren[i] = boardChildren[j];
+                            boardChildren[j] = temp;
+                            setTimeout(() => {
+                                boardChildren[i].classList.remove('highlight-swap');
+                                boardChildren[j].classList.remove('highlight-swap');
+                            }, 300);
+                        }, 300);
+                    }, delay);
+                    delay += swapDelay;
+                }
+            }
+
+            setTimeout(() => {
+                elements.aiLabel.textContent = "🤖 AI đã sắp xếp xong:";
+                gameState.aiReady = true;
+                // Remove any remaining highlights
+                Array.from(elements.aiBoard.children).forEach(child => {
+                    child.classList.remove('highlight-swap');
+                });
+            }, delay);
         }
 
         // ✅ HÀM getAIDelay - SỬA LỖI
@@ -845,8 +953,8 @@
         elements.submitBtn.onclick = checkResults;
 
         function checkResults() {
-            if (gameState.aiOrder.length === 0) {
-                alert("AI đang suy nghĩ, vui lòng chờ một chút!");
+            if (!gameState.aiReady) {
+                alert("AI đang sắp xếp, vui lòng chờ một chút!");
                 return;
             }
             gameState.playerOrder = Array.from(elements.playerBoard.children).map(c => c.textContent);
