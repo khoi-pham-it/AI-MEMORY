@@ -235,7 +235,7 @@
         }
 
         #difficulty-selection h2 {
-            font-size: 2.5em;
+            font-size: 2em;
             color: #1f2937;
             margin-bottom: 20px;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
@@ -493,11 +493,12 @@
             margin: 30px 0 10px 0;
             animation: glow 2s ease-in-out infinite alternate;
         }
+
         /* 🕹️ Ẩn tiêu đề khi vào chế độ chơi */
         body.playing #game-title {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.5s ease;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
         }
 
         @keyframes glow {
@@ -507,6 +508,39 @@
 
             to {
                 text-shadow: 0 0 20px #454444, 0 0 30px #3f3f3d;
+            }
+        }
+
+        /* Fireworks styles */
+        .fireworks-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            opacity: 1;
+            animation: firework-particle 1s ease-out forwards;
+        }
+
+        @keyframes firework-particle {
+            0% {
+                transform: translate(0, 0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(var(--dx), var(--dy));
+                opacity: 0;
             }
         }
     </style>
@@ -549,6 +583,7 @@
 
     <div id="achievement-modal" class="modal">
         <div class="modal-content">
+            <div class="fireworks-container"></div>
             <h2 id="achievement-title">🎉 Thành tựu!</h2>
             <p id="achievement-desc"></p>
             <button id="modal-button" onclick="closeModal()">Tiếp tục</button>
@@ -568,6 +603,7 @@
         };
 
         let achievementsUnlocked = [];
+        let fireworksInterval;
 
         // ✅ ELEMENTS - HOÀN CHỈNH
         const elements = {
@@ -644,7 +680,7 @@
             document.body.classList.add('countdown');
             const difficultyText = gameState.aiDifficulty === "easy" ? "Dễ" : gameState.aiDifficulty === "medium" ? "Trung Bình" : "Khó";
             const messages = [
-                `Bạn đã chọn chế độ '${difficultyText}'`,
+                `Bạn đã chọn chế độ ${difficultyText}`,
                 "Hãy chuẩn bị nhé",
                 "3",
                 "2",
@@ -886,6 +922,35 @@
             document.getElementById("modal-button").onclick = () => location.reload();
             document.getElementById("achievement-modal").style.display = "block";
             document.body.classList.add('modal-open');
+            launchFireworks();
+            fireworksInterval = setInterval(launchFireworks, 1000);
+        }
+
+        function launchFireworks() {
+            const container = document.querySelector('.fireworks-container');
+            if (!container) return;
+            container.innerHTML = ''; // Clear previous particles
+            const colors = ['red', 'green', 'blue', 'yellow', 'purple', 'cyan', 'orange', 'pink'];
+            const numParticles = 30 + Math.floor(Math.random() * 20);
+            const explosionX = Math.random() * 80 + 10 + '%';
+            const explosionY = Math.random() * 40 + 10 + '%';
+            for (let i = 0; i < numParticles; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.left = explosionX;
+                particle.style.top = explosionY;
+                const angle = Math.random() * 2 * Math.PI;
+                const speed = Math.random() * 150 + 50;
+                const dx = Math.cos(angle) * speed;
+                const dy = Math.sin(angle) * speed;
+                particle.style.setProperty('--dx', dx + 'px');
+                particle.style.setProperty('--dy', dy + 'px');
+                container.appendChild(particle);
+                setTimeout(() => {
+                    particle.remove();
+                }, 1100);
+            }
         }
 
         function checkAchievements(playerRound) {
@@ -894,6 +959,7 @@
         }
 
         function closeModal() {
+            clearInterval(fireworksInterval);
             document.getElementById("achievement-modal").style.display = "none";
             document.body.classList.remove('modal-open');
         }
