@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ghi nhớ hình ảnh trái cây</title>
+    <title>Ghi nhớ hình ảnh trái cây cùng AI</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -548,7 +548,7 @@
 
 <body>
 
-    <h1 id="game-title">Ghi nhớ hình ảnh trái cây</h1>
+    <h1 id="game-title">Ghi nhớ hình ảnh trái cây cùng AI</h1>
     <div id="status"></div>
     <div id="game-area">
         <!-- Bỏ header, result sẽ làm header khi cần -->
@@ -570,7 +570,8 @@
             </div>
 
             <div id="ai-area" class="play-area" style="display:none;">
-                <div class="label">🤖 AI sắp xếp: <span class="loading" id="ai-loading" style="display:none;"></span>
+                <div class="label" id="ai-label">🤖 AI sắp xếp: <span class="loading" id="ai-loading"
+                        style="display:none;"></span>
                 </div>
                 <div id="ai-board" class="board"></div>
             </div>
@@ -616,7 +617,8 @@
             aiLoading: document.getElementById("ai-loading"),
             playerArea: document.getElementById("player-area"),
             aiArea: document.getElementById("ai-area"),
-            playAreas: document.getElementById("play-areas")
+            playAreas: document.getElementById("play-areas"),
+            aiLabel: document.getElementById("ai-label")
         };
 
         // ✅ RESET UI CHO VÁN MỚI
@@ -635,6 +637,7 @@
             elements.status.classList.remove('highlight');
             document.getElementById("game-title").style.display = "none";
             achievementsUnlocked = []; // Reset achievements for new game if needed
+            elements.aiLabel.textContent = "🤖 AI sắp xếp:";
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -795,7 +798,7 @@
             setTimeout(() => {
                 elements.aiLoading.style.display = "none";
                 gameState.aiOrder = calculateAIOrder();
-                displayAISequence();
+                showAISequence();
             }, getAIDelay());
         }
 
@@ -815,12 +818,20 @@
             return aiOrder;
         }
 
-        function displayAISequence() {
+        function showAISequence() {
             elements.aiBoard.innerHTML = "";
-            gameState.aiOrder.forEach(img => {
-                const div = createImageBox(img);
+            let i = 0;
+            const showNextAI = () => {
+                if (i >= gameState.numImages) {
+                    elements.aiLabel.textContent = "🤖 AI đã sắp xếp xong:";
+                    return;
+                }
+                const div = createImageBox(gameState.aiOrder[i]);
                 elements.aiBoard.appendChild(div);
-            });
+                i++;
+                setTimeout(showNextAI, gameState.sequenceSpeed / 2); // Faster than sequence show for dynamism
+            };
+            showNextAI();
         }
 
         // ✅ HÀM getAIDelay - SỬA LỖI
