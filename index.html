@@ -635,12 +635,12 @@
 
         <div class="play-areas" style="display:none;" id="play-areas">
             <div id="player-area" class="play-area" style="display:none;">
-                <div class="label">🧍‍♂️ Bạn sắp xếp:</div>
+                <div class="label">🧍‍♂️ BẠN SẮP XẾP:</div>
                 <div id="player-board" class="board"></div>
             </div>
 
             <div id="ai-area" class="play-area" style="display:none;">
-                <div class="label" id="ai-label">🤖 AI sắp xếp: <span class="loading" id="ai-loading"
+                <div class="label" id="ai-label">🤖 AI SẮP XẾP: <span class="loading" id="ai-loading"
                         style="display:none;"></span>
                 </div>
                 <div id="ai-board" class="board"></div>
@@ -708,7 +708,7 @@
             elements.status.classList.remove('highlight');
             document.getElementById("game-title").style.display = "none";
             achievementsUnlocked = []; // Reset achievements for new game if needed
-            elements.aiLabel.textContent = "🤖 AI sắp xếp:";
+            elements.aiLabel.textContent = "🤖 AI SẮP XẾP:";
             gameState.aiReady = false;
         }
 
@@ -933,7 +933,7 @@
             }
 
             setTimeout(() => {
-                elements.aiLabel.textContent = "🤖 AI đã sắp xếp xong:";
+                elements.aiLabel.textContent = "🤖 AI ĐÃ SẮP XẾP XONG:";
                 gameState.aiReady = true;
                 // Remove any remaining highlights
                 Array.from(elements.aiBoard.children).forEach(child => {
