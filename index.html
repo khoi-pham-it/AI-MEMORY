@@ -43,14 +43,31 @@
             /* Tăng chiều rộng */
             width: 100%;
             background: #fefce8;
-            border: 12px solid #4ade80;
-            /* Tăng độ dày border */
             border-radius: 40px;
             /* Làm bo góc lớn hơn */
-
             box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
             /* Tăng shadow */
             transition: filter 0.3s ease;
+            position: relative;
+            /* Để pseudo-element định vị đúng */
+            padding: 20px;
+            /* Thêm padding để viền không sát nội dung */
+        }
+
+        #game-area::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            /* Độ dày viền */
+            left: -12px;
+            right: -12px;
+            bottom: -12px;
+            background: linear-gradient(135deg, #4ade80, #22c55e, #3b82f6, #ef4444);
+            /* Gradient viền */
+            border-radius: 52px;
+            /* Bo góc lớn hơn để bao quanh border */
+            z-index: -1;
+            /* Đặt sau game-area */
         }
 
         body.modal-open #game-area {
@@ -75,6 +92,11 @@
             border-radius: 16px;
             background: #f8fafc;
             box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        #player-board {
+            background: #e6fffa;
+            /* Màu khác biệt cho người chơi */
         }
 
         #image-sequence {
@@ -108,6 +130,8 @@
             position: relative;
             flex-shrink: 1;
             min-width: 0;
+            transition: transform 1s ease;
+            /* THÊM: Transition mượt cho di chuyển swap */
         }
 
         .image-box:active {
@@ -134,18 +158,35 @@
             font-weight: 700;
             margin: 25px 0 10px;
             color: #1e293b;
-            font-size: 1.4em;
+            font-size: clamp(1em, 3vw, 1.4em);
+            padding: 8px 16px;
+            /* THÊM: Padding cho khung */
+            border-radius: 8px;
+            /* THÊM: Bo góc khung */
+            background-color: #ffd700;
+            /* THÊM: Màu vàng ban đầu cho tất cả label */
+            transition: background-color 0.3s ease;
+            /* THÊM: Transition cho màu */
+        }
+
+        .label.arranging {
+            background-color: #ffd700;
+            /* Vàng cho trạng thái đang sắp xếp */
+        }
+
+        .label.arranged {
+            background-color: #22c55e;
+            /* Xanh lá cho trạng thái đã sắp xếp */
         }
 
         #status {
             font-weight: 600;
             color: #1e293b;
             /* margin: 25px 0; */
-            font-size: 1.2em;
+            font-size: clamp(1.5em, 4vw, 2.5em);
             /* padding: 20px; */
             border-radius: 16px;
             transition: opacity 0.5s ease, transform 0.5s ease;
-            font-size: 2.5em;
             color: #ffd700;
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
             animation: glow 2s ease-in-out infinite alternate;
@@ -185,7 +226,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: clamp(3em, 10vw, 5em);
+            font-size: clamp(4em, 12vw, 6em);
             /* Tăng kích thước chữ countdown */
             font-weight: bold;
             color: #fff;
@@ -198,6 +239,68 @@
             margin: 0 !important;
             opacity: 1;
             transition: opacity 0.5s ease;
+            white-space: nowrap;
+        }
+
+        body.countdown #status.loading::after {
+            content: '.';
+            animation: loading-dots 1.5s infinite;
+        }
+
+        @keyframes loading-dots {
+            0% {
+                content: '.';
+            }
+
+            33% {
+                content: '..';
+            }
+
+            66% {
+                content: '...';
+            }
+        }
+
+        /* Prepare styles - làm mờ background để tập trung chuẩn bị */
+        body.prepare::before {
+            filter: blur(10px);
+            opacity: 0.8;
+        }
+
+        body.prepare:after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 998;
+        }
+
+        body.prepare #status {
+            position: fixed !important;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(3em, 10vw, 5em);
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            background: transparent !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            border: none !important;
+            margin: 0 !important;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+            white-space: nowrap;
+        }
+
+        body.prepare #game-area {
+            display: none;
+            pointer-events: none;
         }
 
         button {
@@ -208,7 +311,7 @@
             border-radius: 12px;
             cursor: pointer;
             margin: 10px;
-            font-size: 1.2em;
+            font-size: clamp(0.9em, 3vw, 1.2em);
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
@@ -227,13 +330,14 @@
 
         #difficulty-selection {
             margin: 25px auto;
+            padding: 25px;
             background: #fefce8;
             border-radius: 20px;
             box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
         }
 
         #difficulty-selection h2 {
-            font-size: 2em;
+            font-size: clamp(1.5em, 4vw, 2em);
             color: #1f2937;
             margin-bottom: 20px;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
@@ -252,7 +356,7 @@
             margin: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 1.3em;
+            font-size: clamp(1em, 3vw, 1.3em);
             font-weight: 700;
         }
 
@@ -300,7 +404,7 @@
         #result h3 {
             margin: 0 0 20px;
             color: #92400e;
-            font-size: 1.8em;
+            font-size: clamp(1.4em, 3vw, 1.8em);
         }
 
         .stats-grid {
@@ -318,7 +422,7 @@
         }
 
         .stat-number {
-            font-size: 2.5em;
+            font-size: clamp(2em, 5vw, 2.5em);
             font-weight: 700;
             margin: 0;
         }
@@ -341,7 +445,8 @@
             border-color: #ffd700 !important;
             background: linear-gradient(135deg, #fffbeb, #fef08a) !important;
             box-shadow: 0 0 25px #ffd70050 !important;
-            animation: wrongShake 0.6s ease;
+            animation: none;
+            /* THAY ĐỔI: Bỏ animation cũ để tập trung vào transition di chuyển */
         }
 
         @keyframes correctPulse {
@@ -436,6 +541,34 @@
             .modal-content {
                 width: 95vw;
             }
+
+            #game-title {
+                font-size: 2.5em;
+            }
+
+            #status {
+                font-size: 2em;
+            }
+
+            .label {
+                font-size: 1.2em;
+            }
+
+            button {
+                font-size: 1em;
+            }
+
+            #difficulty-selection h2 {
+                font-size: 1.8em;
+            }
+
+            .difficulty-btn {
+                font-size: 1.1em;
+            }
+
+            .menu-desc {
+                font-size: 0.9em;
+            }
         }
 
         @media (max-width: 480px) {
@@ -450,6 +583,34 @@
                 gap: 8px;
                 padding: 8px;
                 justify-content: center;
+            }
+
+            #game-title {
+                font-size: 2em;
+            }
+
+            #status {
+                font-size: 1.5em;
+            }
+
+            .label {
+                font-size: 1em;
+            }
+
+            button {
+                font-size: 0.9em;
+            }
+
+            #difficulty-selection h2 {
+                font-size: 1.5em;
+            }
+
+            .difficulty-btn {
+                font-size: 1em;
+            }
+
+            .menu-desc {
+                font-size: 0.8em;
             }
         }
 
@@ -483,6 +644,17 @@
         .play-area {
             flex: 1;
             min-width: 0;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #player-area {
+            border: 4px solid blue;
+        }
+
+        #ai-area {
+            border: 4px solid red;
         }
 
         /* Cập nhật để khoảng cách bằng nhau */
@@ -492,7 +664,7 @@
 
         #game-title {
             color: #e7e247;
-            font-size: 3em;
+            font-size: clamp(2em, 5vw, 3em);
             /* Tăng kích thước tiêu đề */
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
             margin: 30px 0 10px 0;
@@ -558,11 +730,11 @@
         }
 
         .icon-box {
-            width: 70px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border: 3px solid #d1d5db;
             border-radius: 15px;
-            font-size: 35px;
+            font-size: 25px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -598,22 +770,27 @@
         }
 
         .menu-desc {
-            font-size: 1em;
+            font-size: clamp(0.8em, 2.5vw, 1em);
             color: #555;
             margin-bottom: 10px;
+        }
+
+        #submit-btn {
+            display: block;
+            margin: 20px auto;
         }
     </style>
 </head>
 
 <body>
 
-    <h1 id="game-title">GHI NHỚ HÌNH ẢNH TRÁI CÂY CÙNG A.I</h1>
+    <h1 id="game-title">GHI NHỚ HÌNH ẢNH TRÁI CÂY CÙNG AI</h1>
     <div id="status"></div>
     <div id="game-area">
         <!-- Bỏ header, result sẽ làm header khi cần -->
 
         <div id="difficulty-selection">
-            <h2><span class="gamepad-icon">🎮</span> Hãy chọn độ khó nào! </h2>
+            <h2><span class="gamepad-icon">🎮</span> HÃY CHỌN ĐỘ KHÓ NÀO! </h2>
             <div class="menu-desc">Thử thách trí nhớ của bạn bằng cách ghi nhớ và sắp xếp thứ tự các hình ảnh trái cây
                 cùng với AI!</div>
             <div class="icon-row">
@@ -635,12 +812,12 @@
 
         <div class="play-areas" style="display:none;" id="play-areas">
             <div id="player-area" class="play-area" style="display:none;">
-                <div class="label">🧍‍♂️ BẠN SẮP XẾP:</div>
+                <div class="label" id="player-label">🧍‍♂️ Bạn sắp xếp:</div> <!-- THÊM id cho player label -->
                 <div id="player-board" class="board"></div>
             </div>
 
             <div id="ai-area" class="play-area" style="display:none;">
-                <div class="label" id="ai-label">🤖 AI SẮP XẾP: <span class="loading" id="ai-loading"
+                <div class="label" id="ai-label">🤖 AI sắp xếp: <span class="loading" id="ai-loading"
                         style="display:none;"></span>
                 </div>
                 <div id="ai-board" class="board"></div>
@@ -689,7 +866,8 @@
             playerArea: document.getElementById("player-area"),
             aiArea: document.getElementById("ai-area"),
             playAreas: document.getElementById("play-areas"),
-            aiLabel: document.getElementById("ai-label")
+            aiLabel: document.getElementById("ai-label"),
+            playerLabel: document.getElementById("player-label") // THÊM: Element cho player label
         };
 
         // ✅ RESET UI CHO VÁN MỚI
@@ -708,7 +886,9 @@
             elements.status.classList.remove('highlight');
             document.getElementById("game-title").style.display = "none";
             achievementsUnlocked = []; // Reset achievements for new game if needed
-            elements.aiLabel.textContent = "🤖 AI SẮP XẾP:";
+            elements.aiLabel.textContent = "🤖 AI sắp xếp:";
+            elements.aiLabel.classList.remove('arranging', 'arranged'); // THÊM: Reset class
+            elements.playerLabel.classList.remove('arranging', 'arranged'); // THÊM: Reset class
             gameState.aiReady = false;
         }
 
@@ -756,11 +936,11 @@
             const difficultyText = gameState.aiDifficulty === "easy" ? "Dễ" : gameState.aiDifficulty === "medium" ? "Trung Bình" : "Khó";
             const messages = [
                 `Bạn đã chọn chế độ ${difficultyText}`,
-                "Hãy chuẩn bị nhé",
+                "Hãy chuẩn bị nhé.",
+                "4",
                 "3",
                 "2",
-                "1",
-                "GO!"
+                "1"
             ];
             let index = 0;
             elements.status.style.opacity = 0;
@@ -792,7 +972,10 @@
             let i = 0;
             const showNext = () => {
                 if (i >= gameState.numImages) {
-                    setTimeout(startPlayerPhase, 1500);
+                    setTimeout(() => {
+                        elements.imageSeq.style.display = "none";
+                        startArrangePrepare();
+                    }, 1500);
                     return;
                 }
                 const div = createImageBox(gameState.correctOrder[i]);
@@ -801,6 +984,16 @@
                 setTimeout(showNext, gameState.sequenceSpeed);
             };
             showNext();
+        }
+
+        function startArrangePrepare() {
+            document.body.classList.add('prepare');
+            elements.status.textContent = "Cùng sắp xếp lại nhé!";
+            elements.status.style.opacity = 1;
+            setTimeout(() => {
+                document.body.classList.remove('prepare');
+                startPlayerPhase();
+            }, 3000);
         }
 
         function startPlayerPhase() {
@@ -903,7 +1096,9 @@
         function arrangeAI() {
             const boardChildren = Array.from(elements.aiBoard.children);
             let delay = 0;
-            const swapDelay = 600;
+            const swapDelay = 3500; // THAY ĐỔI: Delay giữa các swap (ms), điều chỉnh nếu muốn chậm hơn để rõ ràng
+
+            elements.aiLabel.classList.add('arranging'); // THÊM: Set vàng khi bắt đầu sắp xếp
 
             for (let i = 0; i < gameState.numImages; i++) {
                 const target = gameState.aiOrder[i];
@@ -917,27 +1112,52 @@
                     setTimeout(() => {
                         boardChildren[i].classList.add('highlight-swap');
                         boardChildren[j].classList.add('highlight-swap');
+
+                        // THÊM: Tính khoảng cách để di chuyển mượt (dựa trên vị trí thực trên màn hình)
+                        const rectI = boardChildren[i].getBoundingClientRect();
+                        const rectJ = boardChildren[j].getBoundingClientRect();
+                        const dx = rectJ.left - rectI.left;
+                        const dy = rectJ.top - rectI.top;
+
+                        // THÊM: Áp dụng transform để hai item "bay" qua vị trí nhau
+                        boardChildren[i].style.transform = `translate(${dx}px, ${dy}px)`;
+                        boardChildren[j].style.transform = `translate(${-dx}px, ${-dy}px)`;
+
                         setTimeout(() => {
+                            // THÊM: Reset transform và thực hiện swap DOM thực tế
+                            boardChildren[i].style.transition = 'none'; // Tắt transition tạm để reset không animation
+                            boardChildren[j].style.transition = 'none';
+                            boardChildren[i].style.transform = '';
+                            boardChildren[j].style.transform = '';
+
                             elements.aiBoard.insertBefore(boardChildren[j], boardChildren[i]);
                             const temp = boardChildren[i];
                             boardChildren[i] = boardChildren[j];
                             boardChildren[j] = temp;
+
+                            // THÊM: Bật lại transition và remove highlight
                             setTimeout(() => {
+                                boardChildren[i].style.transition = 'transform 1s ease';
+                                boardChildren[j].style.transition = 'transform 1s ease';
                                 boardChildren[i].classList.remove('highlight-swap');
                                 boardChildren[j].classList.remove('highlight-swap');
-                            }, 300);
-                        }, 300);
+                            }, 100); // Delay nhỏ để browser apply
+                        }, 1500); // THAY ĐỔI: Thời gian di chuyển (ms), tăng nếu muốn chậm hơn
                     }, delay);
                     delay += swapDelay;
                 }
             }
 
             setTimeout(() => {
-                elements.aiLabel.textContent = "🤖 AI ĐÃ SẮP XẾP XONG:";
+                elements.aiLabel.textContent = "🤖 AI đã sắp xếp xong:";
+                elements.aiLabel.classList.remove('arranging'); // THÊM: Xóa vàng
+                elements.aiLabel.classList.add('arranged'); // THÊM: Thêm xanh lá khi xong
                 gameState.aiReady = true;
-                // Remove any remaining highlights
+                // THÊM: Reset tất cả để tránh lỗi
                 Array.from(elements.aiBoard.children).forEach(child => {
                     child.classList.remove('highlight-swap');
+                    child.style.transform = '';
+                    child.style.transition = 'transform 1s ease';
                 });
             }, delay);
         }
