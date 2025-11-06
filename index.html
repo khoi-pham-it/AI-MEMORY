@@ -1038,6 +1038,7 @@
                 const div = createImageBox(img);
                 div.draggable = true;
                 div.addEventListener("dragstart", dragStart);
+                div.addEventListener("dragend", dragEnd);
                 elements.playerBoard.appendChild(div);
             });
             makeDroppable();
@@ -1047,7 +1048,14 @@
         let draggedItem = null;
         function dragStart(e) {
             draggedItem = this;
-            setTimeout(() => this.style.opacity = "0.5", 0);
+            setTimeout(() => {
+                this.style.opacity = "0.5";
+                this.classList.add('highlight-swap');
+            }, 0);
+        }
+        function dragEnd(e) {
+            this.style.opacity = "1";
+            this.classList.remove('highlight-swap');
         }
         function dragOver(e) { e.preventDefault(); }
         function dropItem(e) {
@@ -1062,6 +1070,7 @@
                 parent.insertBefore(draggedItem, this);
             }
             draggedItem.style.opacity = "1";
+            draggedItem.classList.remove('highlight-swap');
             gameState.playerOrder = Array.from(parent.children).map(c => c.textContent);
         }
         function makeDroppable() {
