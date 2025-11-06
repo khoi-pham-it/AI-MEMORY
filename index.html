@@ -183,7 +183,8 @@
             font-weight: 600;
             color: #1e293b;
             /* margin: 25px 0; */
-            font-size: clamp(1.5em, 4vw, 2.5em);
+            font-size: clamp(1.8em, 5vw, 3em);
+            /* TĂNG: Tăng min và max cho chữ lớn hơn trên laptop */
             /* padding: 20px; */
             border-radius: 16px;
             transition: opacity 0.5s ease, transform 0.5s ease;
@@ -226,8 +227,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: clamp(4em, 12vw, 6em);
-            /* Tăng kích thước chữ countdown */
+            font-size: clamp(2em, 10vw, 4em);
+            /* SỬA: Responsive tốt hơn, giảm max size */
             font-weight: bold;
             color: #fff;
             text-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
@@ -239,7 +240,8 @@
             margin: 0 !important;
             opacity: 1;
             transition: opacity 0.5s ease;
-            white-space: nowrap;
+            word-break: break-word;
+            /* SỬA: Cho phép wrap chữ để không tràn viền */
         }
 
         body.countdown #status.loading::after {
@@ -283,7 +285,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: clamp(3em, 10vw, 5em);
+            font-size: clamp(3em, 12vw, 6em);
+            /* TĂNG: Tăng max size để lớn hơn trên laptop */
             font-weight: bold;
             color: #fff;
             text-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
@@ -295,7 +298,8 @@
             margin: 0 !important;
             opacity: 1;
             transition: opacity 0.5s ease;
-            white-space: nowrap;
+            word-break: break-word;
+            /* SỬA: Cho phép wrap chữ để không tràn viền */
         }
 
         body.prepare #game-area {
@@ -887,8 +891,8 @@
             document.getElementById("game-title").style.display = "none";
             achievementsUnlocked = []; // Reset achievements for new game if needed
             elements.aiLabel.textContent = "🤖 AI sắp xếp:";
-            elements.aiLabel.classList.remove('arranging', 'arranged'); // THÊM: Reset class
-            elements.playerLabel.classList.remove('arranging', 'arranged'); // THÊM: Reset class
+            elements.aiLabel.classList.remove('arranged'); // THÊM: Reset class
+            elements.playerLabel.classList.remove('arranged'); // THÊM: Reset class
             gameState.aiReady = false;
         }
 
@@ -1177,6 +1181,7 @@
                 alert("AI đang sắp xếp, vui lòng chờ một chút!");
                 return;
             }
+            elements.playerLabel.classList.add('arranged'); // THÊM: Đổi màu label người chơi khi bấm xác nhận
             gameState.playerOrder = Array.from(elements.playerBoard.children).map(c => c.textContent);
             elements.submitBtn.style.display = "none";
             elements.status.style.display = "none";
